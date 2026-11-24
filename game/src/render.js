@@ -110,6 +110,37 @@ function makeCarMesh(color, isPolice) {
   return { group, lightRed, lightBlue };
 }
 
+function makeBoatMesh(color) {
+  const group = new THREE.Group();
+  const hull = new THREE.Mesh(
+    new THREE.BoxGeometry(2.2, 0.7, 5.2),
+    new THREE.MeshLambertMaterial({ color }),
+  );
+  hull.position.y = 0.35;
+  group.add(hull);
+  const bow = new THREE.Mesh(
+    new THREE.ConeGeometry(1.1, 1.6, 4),
+    new THREE.MeshLambertMaterial({ color }),
+  );
+  bow.rotation.x = Math.PI / 2;
+  bow.rotation.y = Math.PI / 4;
+  bow.position.set(0, 0.35, 3.2);
+  group.add(bow);
+  const mast = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.09, 3.2, 6),
+    new THREE.MeshLambertMaterial({ color: 0x5a4632 }),
+  );
+  mast.position.y = 2.2;
+  group.add(mast);
+  const sail = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.4, 2.2),
+    new THREE.MeshLambertMaterial({ color: 0xf2ead8, side: THREE.DoubleSide }),
+  );
+  sail.position.set(0, 2.2, 0.4);
+  group.add(sail);
+  return group;
+}
+
 function makePersonMesh(shirtColor) {
   const group = new THREE.Group();
   const shirt = new THREE.MeshLambertMaterial({ color: shirtColor });
@@ -316,6 +347,16 @@ export function createRenderer(canvas, city) {
     scene.add(leaves);
   }
 
+  // Marina boats, moored off the beach road. They bob on the water (see render()).
+  const boatMeshes = [];
+  for (const boat of city.boats) {
+    const mesh = makeBoatMesh(boat.color);
+    mesh.position.set(boat.x, 0.1, boat.z);
+    mesh.rotation.y = boat.angle;
+    scene.add(mesh);
+    boatMeshes.push({ mesh, phase: boat.phase });
+  }
+
   // Mission marker: a light beam and a floating diamond.
   const beam = new THREE.Mesh(
     new THREE.CylinderGeometry(0.9, 0.9, 34, 12, 1, true),
@@ -437,6 +478,12 @@ export function createRenderer(canvas, city) {
       mesh.position.set(bag.x, 1 + Math.sin(time * 2 + index) * 0.2, bag.z);
       mesh.rotation.y = time * 2 + index;
     });
+
+    // The marina boats bob on the water and roll gently with the swell.
+    for (const { mesh, phase } of boatMeshes) {
+      mesh.position.y = 0.1 + Math.sin(time * 1.2 + phase) * 0.15;
+      mesh.rotation.z = Math.sin(time * 0.9 + phase) * 0.04;
+    }
 
     // The mission marker follows the current target.
     if (state.target) {

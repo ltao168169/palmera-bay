@@ -5,6 +5,7 @@
 export function createAudio() {
   let ctx = null;
   let master = null;
+  let muted = false;
   let engineOsc = null;
   let engineGain = null;
   let engineFilter = null;
@@ -23,7 +24,7 @@ export function createAudio() {
       if (!AC) return false;
       ctx = new AC();
       master = ctx.createGain();
-      master.gain.value = 0.5;
+      master.gain.value = muted ? 0 : 0.5;
       master.connect(ctx.destination);
       engineOsc = ctx.createOscillator();
       engineOsc.type = 'sawtooth';
@@ -69,6 +70,13 @@ export function createAudio() {
 
   return {
     unlock() { ensure(); },
+    /** M toggles sound: the master gain goes to zero and back. */
+    toggleMute() {
+      muted = !muted;
+      if (ctx && master) master.gain.setTargetAtTime(muted ? 0 : 0.5, ctx.currentTime, 0.02);
+      return muted;
+    },
+    get muted() { return muted; },
     /** speed01: 0..1 of the car's top speed; driving false cuts the engine. */
     engine(speed01, driving) {
       if (!ensure()) return;
@@ -95,6 +103,12 @@ export function createAudio() {
     punch() { blip(160, 0.1, 'square', 0.25, 70); },
     enter() { blip(300, 0.08, 'triangle', 0.18, 420); },
     mission() { blip(523, 0.12, 'sine', 0.2); setTimeout(() => blip(659, 0.12, 'sine', 0.2), 110); setTimeout(() => blip(784, 0.22, 'sine', 0.22), 220); },
+    /** A single crate collected in Harbor Lights: a short rising two-note tick. */
+    stinger() { blip(659, 0.1, 'sine', 0.2); setTimeout(() => blip(988, 0.18, 'sine', 0.2), 90); },
+    /** The biggest job pays out: a four-note fanfare over the mission jingle. */
+    fanfare() { this.mission(); setTimeout(() => blip(1046, 0.3, 'sine', 0.22), 340); setTimeout(() => blip(1318, 0.4, 'sine', 0.22), 480); },
+    /** The harbour horn when Harbor Lights starts: two low foghorn notes. */
+    horn() { blip(147, 0.7, 'sawtooth', 0.16, 138); setTimeout(() => blip(147, 0.7, 'sawtooth', 0.16, 138), 800); },
     fail() { blip(320, 0.25, 'sawtooth', 0.18, 140); },
     bust() { blip(220, 0.4, 'sawtooth', 0.2, 90); },
   };

@@ -1,6 +1,6 @@
 // The automated self-test behind ?selftest=1&seed=N. It runs the real simulation headlessly
 // — no WebGL, no renderer — and checks the game's rules end to end: the city, walking,
-// stealing and driving a car, the wanted level and the police, all three missions, cash
+// stealing and driving a car, the wanted level and the police, all four missions, cash
 // pickups, the bust, and the save. Results go to window.__selftest and to #selftest in the
 // page, so a headless browser can read them.
 
@@ -28,8 +28,9 @@ export function runSelfTest(world, city) {
 
   world.reset();
   check('city: buildings and colliders', city.buildings.length >= 40 && city.colliders.length === city.buildings.length, `${city.buildings.length} buildings`);
-  check('city: 10 parked cars, 12 cash spots', city.parked.length === 10 && city.cashSpots.length === CASH.count, `${city.parked.length} parked, ${city.cashSpots.length} cash spots`);
-  check('world: 22 cars and 24 pedestrians', s.cars.length === 22 && s.peds.length === 24, `${s.cars.length} cars, ${s.peds.length} peds`);
+  check('city: 10 parked cars, 18 cash spots', city.parked.length === 10 && city.cashSpots.length === CASH.count, `${city.parked.length} parked, ${city.cashSpots.length} cash spots`);
+  check('city: 4 boats moored off the marina', city.boats.length === 4 && city.boats.every((b) => b.x > 188), `${city.boats.length} boats`);
+  check('world: 26 cars and 24 pedestrians', s.cars.length === 26 && s.peds.length === 24, `${s.cars.length} cars, ${s.peds.length} peds`);
 
   // Walking.
   const x0 = s.player.x;
@@ -91,6 +92,19 @@ export function runSelfTest(world, city) {
   world.reset();
   world.startMission(2);
   check('mission 3: Coastline Run starts with 2 stars', s.wanted === 2, `${s.wanted} star(s)`);
+
+  // Mission 4: three crates, then the pier — and it pays $600 with 1 star on start.
+  world.reset();
+  const started4 = world.startMission(3);
+  check('mission 4: Harbor Lights starts with 1 star', started4 && world.missions.active === 3 && s.wanted === 1, `active ${world.missions.active}, ${s.wanted} star(s)`);
+  const cashBefore4 = s.cash;
+  const crateSpots = [city.spots.stash0, city.spots.stash1, city.spots.stash2, city.spots.hideout];
+  for (let i = 0; i < crateSpots.length; i += 1) {
+    s.player.x = crateSpots[i].x;
+    s.player.z = crateSpots[i].z;
+    world.step(STEP, input());
+  }
+  check('mission 4: all three crates and the delivery pay $600', world.missions.done[3] && s.cash === cashBefore4 + 600, `cash $${cashBefore4} -> $${s.cash}`);
 
   // Cash bag.
   world.reset();

@@ -3,7 +3,7 @@
 // advances one fixed step and returns what happened as bit flags, so the caller can react
 // without the world knowing about screens or sound. The renderer and the HUD read state.
 
-import { CAR, CASH, CITY, PARKED, PEDS, PLAYER, POLICE, STEP, TRAFFIC, WANTED } from './config.js';
+import { CAR, CASH, CITY, PALETTE, PARKED, PEDS, PLAYER, POLICE, STEP, TRAFFIC, WANTED } from './config.js';
 import { collideCircle } from './city.js';
 import { createMissions } from './missions.js';
 import { pick, range } from './random.js';
@@ -60,7 +60,8 @@ export function createWorld(rng, city) {
 
   function spawnTrafficCar() {
     const p = city.randomStreetPoint();
-    const car = makeCar('traffic', p.x, p.z, p.heading, pick(rng, [0xc23b2e, 0x2e6fc2, 0xe8b73a, 0x3aa655, 0xd8d8d8, 0x222226]));
+    // Traffic now uses the full palette (v2: ten colours, was a six-colour subset).
+    const car = makeCar('traffic', p.x, p.z, p.heading, pick(rng, PALETTE.car));
     car.axis = Math.abs(Math.sin(p.heading)) < 0.5 ? 'x' : 'z';
     car.dir = Math.cos(p.heading) >= 0 ? 1 : -1;
     if (car.axis === 'z') car.dir = Math.sin(p.heading) >= 0 ? 1 : -1;
@@ -609,7 +610,8 @@ export function createWorld(rng, city) {
     if (typeof save.cash === 'number') state.cash = save.cash;
     if (typeof save.bestCash === 'number') state.bestCash = save.bestCash;
     if (Array.isArray(save.missionsDone)) {
-      for (let i = 0; i < 3 && i < save.missionsDone.length; i += 1) missions.done[i] = !!save.missionsDone[i];
+      // v2 has four jobs; an older three-job save just leaves the fourth undone.
+      for (let i = 0; i < missions.done.length && i < save.missionsDone.length; i += 1) missions.done[i] = !!save.missionsDone[i];
     }
     if (Array.isArray(save.cashTaken)) {
       for (let i = 0; i < save.cashTaken.length && i < state.cashBags.length; i += 1) {

@@ -1,6 +1,12 @@
 // Every tuning number and colour in one place. The city is a 6x6 grid of blocks on a 48 m
 // pitch, with a beach and ocean on the +X side and a pier at z = 0. Nothing here depends on
 // the screen size; the renderer scales to the window.
+//
+// Palmera Bay v2: 18 cash bags (was 12), 16 traffic cars (was 12), two extra car colours,
+// and a marina with moored boats off the beach road.
+
+/** The build's version, shown on the title screen and in the self-test header. */
+export const VERSION = '2.0.0';
 
 export const STEP = 1 / 60;
 
@@ -47,10 +53,11 @@ export const CAR = {
   health: 100,
 };
 
-export const TRAFFIC = { count: 12, speed: 8, speedJitter: 2.5 };
+export const TRAFFIC = { count: 16, speed: 8, speedJitter: 2.5 };
 export const PARKED = { count: 10 };
 export const PEDS = { count: 24, walkSpeed: 1.5, runSpeed: 4.5 };
-export const CASH = { count: 12, value: 50 };
+export const CASH = { count: 18, value: 50 };
+export const BOATS = { count: 4 };
 
 export const WANTED = {
   max: 5,
@@ -86,7 +93,7 @@ export const PALETTE = {
   roof: 0x4a4440,
   windowLit: 0xffd27a,
   windowDark: 0x2c3a4a,
-  car: [0xc23b2e, 0x2e6fc2, 0xe8b73a, 0x3aa655, 0xd8d8d8, 0x222226, 0x7a4fc2, 0xe07a2e],
+  car: [0xc23b2e, 0x2e6fc2, 0xe8b73a, 0x3aa655, 0xd8d8d8, 0x222226, 0x7a4fc2, 0xe07a2e, 0x14b8a6, 0xd946ef],
   policeBody: 0x1c1e24,
   policeDoor: 0xe8e8e8,
   playerShirt: 0x2e8f6e,

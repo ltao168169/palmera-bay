@@ -16,6 +16,8 @@
   #health-fill { height: 100%; width: 100%; background: #43d17a; }
   #health-text { font-size: 13px; color: #c8cfdb; }
   #cash { font-size: 26px; font-weight: 700; color: #7ddf9a; }
+  #wanted-label { font-size: 11px; letter-spacing: 2px; color: #565c66; margin-top: 4px; }
+  #wanted-label.hot { color: #ff6a5a; }
   #stars { font-size: 24px; letter-spacing: 3px; color: #565c66; margin-top: 2px; }
   #stars.hot { color: #ffd94a; text-shadow: 0 0 8px rgba(255, 217, 74, 0.7); }
   #topright { position: absolute; top: 14px; right: 14px; text-align: right; }
@@ -50,6 +52,7 @@
     <div id="healthbar"><div id="health-fill"></div></div>
     <div id="health-text">HP 100</div>
     <div id="cash">$0</div>
+    <div id="wanted-label">WANTED</div>
     <div id="stars">☆☆☆☆☆</div>
   </div>
   <div id="topright">
@@ -66,12 +69,12 @@
 <div id="screen-title" class="screen">
   <div class="card">
     <h1>PALMERA BAY</h1>
-    <p>You are Danny Cole, fresh out and broke in Palmera Bay. Vera Solano has work for you — if you can stay ahead of the Palmera Bay PD. Steal cars, run jobs, grab the cash bags, and don’t get caught.</p>
+    <p>You are Danny Cole, fresh out and broke in Palmera Bay. Vera Solano has four jobs for you — if you can stay ahead of the Palmera Bay PD. Steal cars, run jobs, grab the 18 cash bags, and don’t get caught.</p>
     <div class="controls">
       <b>W A S D</b> — walk / drive &nbsp;·&nbsp; <b>Shift</b> — run<br>
       <b>Space</b> — jump / handbrake &nbsp;·&nbsp; <b>E</b> — enter a car / take a job<br>
       <b>F</b> — punch &nbsp;·&nbsp; <b>Mouse drag</b> — camera &nbsp;·&nbsp; <b>Wheel</b> — zoom<br>
-      <b>P</b> — pause
+      <b>P</b> — pause &nbsp;·&nbsp; <b>M</b> — mute
     </div>
     <p id="title-best"></p>
     <p class="go">Press Enter or click to start</p>
@@ -92,6 +95,6 @@
   </div>
 </div>
 <pre id="selftest" class="hidden"></pre>
-<script type="module" src="./src/main.js?v=5"></script>
+<script type="module" src="./src/main.js?v=6"></script>
 </body>
 </html>

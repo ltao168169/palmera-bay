@@ -26,3 +26,15 @@ export function pick(rng, list) {
 export function chance(rng, p) {
   return rng() < p;
 }
+
+/** A shuffled copy of a list (Fisher–Yates), driven by the seeded rng. */
+export function shuffle(rng, list) {
+  const out = list.slice();
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    const tmp = out[i];
+    out[i] = out[j];
+    out[j] = tmp;
+  }
+  return out;
+}

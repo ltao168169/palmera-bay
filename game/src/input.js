@@ -8,6 +8,7 @@ export const ACTION_PAUSE = 2;
 export const ACTION_JUMP = 4;
 export const ACTION_PUNCH = 8;
 export const ACTION_ENTER = 16;
+export const ACTION_MUTE = 32;
 
 const FORWARD = new Set(['KeyW', 'ArrowUp']);
 const BACK = new Set(['KeyS', 'ArrowDown']);
@@ -19,6 +20,7 @@ const PUNCH = new Set(['KeyF']);
 const ENTER = new Set(['KeyE']);
 const CONFIRM = new Set(['Enter']);
 const PAUSE = new Set(['KeyP', 'Escape']);
+const MUTE = new Set(['KeyM']);
 const HANDBRAKE = new Set(['Space']);
 
 export function createInput(target) {
@@ -48,6 +50,8 @@ export function createInput(target) {
       if (!event.repeat) actions |= ACTION_CONFIRM;
     } else if (PAUSE.has(event.code)) {
       if (!event.repeat) actions |= ACTION_PAUSE;
+    } else if (MUTE.has(event.code)) {
+      if (!event.repeat) actions |= ACTION_MUTE;
     } else return;
   });
   window.addEventListener('keyup', (event) => {

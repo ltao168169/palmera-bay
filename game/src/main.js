@@ -4,12 +4,12 @@
 // mission stages that scene instead of running the loop and sets window.__shotReady;
 // ?selftest=1 runs the automated checks headlessly and writes window.__selftest.
 
-import { SAVE_KEY, STEP } from './config.js';
+import { SAVE_KEY, STEP, VERSION } from './config.js';
 import { buildCity } from './city.js';
 import { createRandom } from './random.js';
 import { createWorld, EVENT_BUSTED, EVENT_COIN, EVENT_CRIME, EVENT_ENTER, EVENT_EXIT, EVENT_HIT, EVENT_MISSION_DONE, EVENT_MISSION_FAIL, EVENT_MISSION_STEP, EVENT_PUNCH, EVENT_WASTED, EVENT_WRECK } from './world.js';
-import { ACTION_CONFIRM, ACTION_ENTER, ACTION_JUMP, ACTION_PAUSE, ACTION_PUNCH, createInput } from './input.js';
-import { createRenderer } from './render.js?v=5';
+import { ACTION_CONFIRM, ACTION_ENTER, ACTION_JUMP, ACTION_MUTE, ACTION_PAUSE, ACTION_PUNCH, createInput } from './input.js';
+import { createRenderer } from './render.js?v=6';
 import { createAudio } from './audio.js';
 import { createHud } from './hud.js';
 import { stageShot } from './shots.js';
@@ -22,6 +22,7 @@ const shot = params.get('shot');
 const selftest = params.get('selftest') === '1';
 const seedParam = Number.parseInt(params.get('seed') ?? '', 10);
 const seed = Number.isInteger(seedParam) ? seedParam : Math.floor(Math.random() * 4294967296);
+document.title = `Palmera Bay v${VERSION} — an open-world crime game`;
 
 const canvas = document.getElementById('game');
 const status = document.getElementById('status');
@@ -72,7 +73,7 @@ function runShot(name) {
   camPitch = staged.camPitch;
   camDist = staged.camDist;
   if (renderer.hasWebGL) renderer.setCameraPose(camYaw, camPitch, camDist);
-  hud.setTitleBest(world.state.bestCash, world.missions.done.filter(Boolean).length);
+  hud.setTitleBest(world.state.bestCash, world.missions.done.filter(Boolean).length, world.missions.done.length);
   hud.update(world.state, world.missions, 0);
   if (staged.screen === 'title') hud.showScreen('title');
   else hud.showScreen(null);
@@ -154,9 +155,10 @@ function runGame() {
   let accumulator = 0;
   let last = performance.now();
   const save = applySave();
-  hud.setTitleBest(world.state.bestCash, world.missions.done.filter(Boolean).length);
+  hud.setTitleBest(world.state.bestCash, world.missions.done.filter(Boolean).length, world.missions.done.length);
   hud.showScreen('title');
   announce('Palmera Bay. Press Enter or click to start.');
+  let prevMission = -1;
 
   function startGame() {
     screen = 'play';
@@ -213,11 +215,15 @@ function runGame() {
     if (events & EVENT_EXIT) audio.enter();
     if (events & EVENT_CRIME) announce('The police noticed that.');
     if (events & EVENT_MISSION_STEP) {
-      audio.mission();
+      // Harbor Lights crate pickups get the short stinger; other jobs the jingle.
+      if (world.missions.active === 3) audio.stinger();
+      else audio.mission();
       hud.toast(`Next: ${world.missions.objective()}`);
     }
     if (events & EVENT_MISSION_DONE) {
-      audio.mission();
+      // The $600 Harbor Lights payout gets the fanfare; other jobs the jingle.
+      if (world.state.lastPayout === 600) audio.fanfare();
+      else audio.mission();
       hud.toast(`Job done — Vera paid $${world.state.lastPayout}`);
       saveGame();
     }
@@ -245,6 +251,10 @@ function runGame() {
     if (renderer.hasWebGL) renderer.setCameraPose(camYaw, camPitch, camDist);
 
     const actions = input.takeActions();
+    if (actions & ACTION_MUTE) {
+      const nowMuted = audio.toggleMute();
+      announce(nowMuted ? 'Sound off (M to turn it back on).' : 'Sound on.');
+    }
     if (actions & ACTION_CONFIRM) {
       audio.unlock();
       if (screen === 'title') startGame();
@@ -287,6 +297,11 @@ function runGame() {
         const events = world.step(STEP, stepInput);
         accumulator -= STEP;
         if (screen === 'play') react(events);
+        // Harbor Lights just started: sound the harbour horn once.
+        if (world.missions.active !== prevMission) {
+          if (world.missions.active === 3) audio.horn();
+          prevMission = world.missions.active;
+        }
         if (world.state.busted || world.state.wasted) break;
       }
     } else {

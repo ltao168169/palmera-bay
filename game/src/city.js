@@ -2,8 +2,8 @@
 // beach, the ocean and the pier, plus every spawn point the game needs. It holds no
 // rendering and no browser: the world steps on this data and the renderer draws it.
 
-import { CITY, PALETTE } from './config.js';
-import { chance, pick, range, rangeInt } from './random.js';
+import { BOATS, CITY, PALETTE } from './config.js';
+import { chance, pick, range, rangeInt, shuffle } from './random.js';
 
 /** The street centre lines, both axes: -144, -96, -48, 0, 48, 96, 144. */
 export function streetLines() {
@@ -53,13 +53,14 @@ export function buildCity(rng) {
   const parks = [];
   const plaza = { x: -24, z: -24 };
 
-  // Two park blocks, never the plaza block.
+  // Two park blocks, never the plaza block. Shuffle the blocks and take the first two
+  // that are not the plaza — the same seed always picks the same parks.
   const parkBlocks = [];
-  while (parkBlocks.length < 2) {
-    const bx = pick(rng, centres);
-    const bz = pick(rng, centres);
-    if ((bx === plaza.x && bz === plaza.z) || parkBlocks.some((p) => p.x === bx && p.z === bz)) continue;
-    parkBlocks.push({ x: bx, z: bz });
+  const shuffled = shuffle(rng, centres.flatMap((bx) => centres.map((bz) => ({ x: bx, z: bz }))));
+  for (const block of shuffled) {
+    if (block.x === plaza.x && block.z === plaza.z) continue;
+    parkBlocks.push(block);
+    if (parkBlocks.length === 2) break;
   }
   for (const p of parkBlocks) parks.push({ x: p.x, z: p.z, w: CITY.block - 8, d: CITY.block - 8 });
 
@@ -98,20 +99,21 @@ export function buildCity(rng) {
     for (let n = 0; n < 4; n += 1) palms.push({ x: p.x + range(rng, -10, 10), z: p.z + range(rng, -10, 10) });
   }
 
-  // Parked cars along the curbs.
+  // Parked cars along the curbs, parallel to the street (v2: nose-in parking made the
+  // first drive run straight into a building; parallel cars pull out down the street).
   const parked = [];
   for (let n = 0; n < 10; n += 1) {
     const along = pick(rng, lines);
     const at = range(rng, -132, 132);
     const side = chance(rng, 0.5) ? 1 : -1;
-    if (chance(rng, 0.5)) parked.push({ x: at, z: along + side * 4.2, angle: side > 0 ? 0 : Math.PI, color: pick(rng, PALETTE.car) });
-    else parked.push({ x: along + side * 4.2, z: at, angle: side > 0 ? Math.PI / 2 : -Math.PI / 2, color: pick(rng, PALETTE.car) });
+    if (chance(rng, 0.5)) parked.push({ x: at, z: along + side * 4.2, angle: side > 0 ? Math.PI / 2 : -Math.PI / 2, color: pick(rng, PALETTE.car) });
+    else parked.push({ x: along + side * 4.2, z: at, angle: side > 0 ? 0 : Math.PI, color: pick(rng, PALETTE.car) });
   }
 
-  // Cash bags: nine on the streets (by the curb, always reachable), two on the beach,
-  // one out on the pier.
+  // Cash bags: twelve on the streets (by the curb, always reachable), three on the
+  // beach, two out on the pier, and one in the first park. v2: 18 bags (was 12).
   const cashSpots = [];
-  for (let n = 0; n < 9; n += 1) {
+  for (let n = 0; n < 12; n += 1) {
     const along = pick(rng, lines);
     const at = range(rng, -132, 132);
     const side = chance(rng, 0.5) ? 1 : -1;
@@ -120,7 +122,10 @@ export function buildCity(rng) {
   }
   cashSpots.push({ x: 168, z: -60 });
   cashSpots.push({ x: 168, z: 96 });
+  cashSpots.push({ x: 168, z: 120 });
   cashSpots.push({ x: 210, z: 0 });
+  cashSpots.push({ x: 224, z: 0 });
+  cashSpots.push({ x: parks[0].x, z: parks[0].z });
 
   // The spots the missions use.
   const spots = {
@@ -129,11 +134,24 @@ export function buildCity(rng) {
     dropoff: { x: 72, z: 52 }, // Club Nova, on the sidewalk outside its block
     passenger: { x: -72, z: -52 }, // the hotel, on the sidewalk outside its block
     marina: { x: 156, z: -96 }, // the marina, down the beach road
+    stash0: { x: 168, z: -120 }, // Harbor Lights crate 1: on the beach
+    stash1: { x: -96, z: 48 }, // Harbor Lights crate 2: an old-town intersection
+    stash2: { x: 48, z: 144 }, // Harbor Lights crate 3: the marina road
+    hideout: { x: 232, z: 0 }, // Harbor Lights drop: the end of the pier
     checkpoints: [
       { x: 156, z: -120 }, { x: 156, z: -60 }, { x: 156, z: 0 },
       { x: 156, z: 60 }, { x: 156, z: 120 }, { x: 232, z: 0 },
     ],
   };
+
+  // Moored boats off the marina, bobbing on the water. They are scenery with a pulse:
+  // the renderer animates them, and the harbour horn sounds when Harbor Lights starts.
+  const boats = [
+    { x: 205, z: -108, angle: 0.4, color: 0xe8e8e8, phase: 0 },
+    { x: 218, z: -84, angle: -0.3, color: 0xc23b2e, phase: 1.7 },
+    { x: 208, z: -60, angle: 0.9, color: 0x2e6fc2, phase: 3.1 },
+    { x: 226, z: -120, angle: 0.1, color: 0xe8b73a, phase: 4.4 },
+  ].slice(0, BOATS.count);
 
   function nearestStreet(v) {
     let best = lines[0];
@@ -165,6 +183,6 @@ export function buildCity(rng) {
 
   return {
     lines, centres, buildings, colliders, parks, plaza, lights, palms,
-    parked, cashSpots, spots, nearestStreet, isOnRoad, randomStreetPoint, clampToWorld,
+    parked, cashSpots, spots, boats, nearestStreet, isOnRoad, randomStreetPoint, clampToWorld,
   };
 }

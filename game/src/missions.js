@@ -1,4 +1,4 @@
-// The story work: three jobs from fixer Vera Solano, each a short chain of "go here" steps
+// The story work: four jobs from fixer Vera Solano, each a short chain of "go here" steps
 // with a payout at the end. The runner holds which job and step the player is on; the world
 // feeds it positions and it answers with the objective text, the marker position and whether
 // a job was completed or failed. Nothing here draws or steps the world itself.
@@ -43,6 +43,20 @@ export const MISSIONS = [
       { label: 'Final checkpoint — end of the pier', target: 'checkpoint5', radius: 6, timer: 80 },
     ],
   },
+  {
+    id: 'harbor-lights',
+    name: 'Harbor Lights',
+    giver: 'Vera Solano',
+    brief: 'The harbour stash is split three ways — beach, old town, marina road. Collect all three crates, then get them to the end of the pier. The harbour master is watching.',
+    reward: 600,
+    wantedOnStart: 1,
+    steps: [
+      { label: 'Collect the first crate on the beach', target: 'stash0', radius: 3.5 },
+      { label: 'Collect the second crate in old town', target: 'stash1', radius: 3.5 },
+      { label: 'Collect the third crate on the marina road', target: 'stash2', radius: 3.5 },
+      { label: 'Deliver the stash to the end of the pier', target: 'hideout', radius: 4 },
+    ],
+  },
 ];
 
 function targetPos(spots, name) {
@@ -51,7 +65,7 @@ function targetPos(spots, name) {
 }
 
 export function createMissions(spots) {
-  const done = [false, false, false];
+  const done = [false, false, false, false];
   let active = -1; // index into MISSIONS, or -1
   let step = 0;
   let timer = 0;
@@ -66,7 +80,8 @@ export function createMissions(spots) {
       if (next === -1) return 'All jobs done — Palmera Bay is yours. Spend it well.';
       return 'Vera has work. Meet her at the plaza (yellow marker).';
     }
-    return current().steps[step].label;
+    // Name the job and the step so the HUD reads as a tracker, not just a label.
+    return `${current().name} · ${current().steps[step].label}`;
   }
 
   function target() {

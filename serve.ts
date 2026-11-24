@@ -2,6 +2,8 @@
 // locally without a build step: `node serve.ts` serves game/ on http://localhost:8080.
 // It sends the MIME types a browser game needs, refuses any path outside game/, and otherwise
 // does nothing clever: this is a development convenience, not a web server for the internet.
+// Palmera Bay v2: it also answers every file with an X-Palmera-Bay-Version header so a
+// browser (or a screenshot run) can tell which build it is looking at.
 import { createReadStream, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize, resolve, sep } from 'node:path';
@@ -65,6 +67,7 @@ createServer((request, response) => {
     'content-type': MIME[extname(file).toLowerCase()] ?? 'application/octet-stream',
     'content-length': size,
     'cache-control': 'no-store',
+    'x-palmera-bay-version': '2.0.0',
   });
   createReadStream(file).pipe(response);
 }).listen(port, '127.0.0.1', () => {

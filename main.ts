@@ -1,13 +1,13 @@
-// PALMERA BAY — a sun-soaked open-world crime game for make.fun gta6-01 (Node 22, stdlib only).
+// PALMERA BAY v2 — a sun-soaked open-world crime game for make.fun gta6-01 (Node 22, stdlib only).
 // The game is this directory's game/ folder: plain static files a desktop browser loads offline
 // (game/index.html and its ES modules, three.js vendored under game/vendor/, no network request),
 // and this program hands it in. It copies game/ and screenshots/ from beside this file to
 // /output and writes /output/dossier.json, the summary the judge reads, with the vendored
 // make.fun library. The game: a procedural coastal city to explore on foot and by car, traffic
 // and pedestrians, cars to steal and drive, a 0-5 star wanted level with police who chase, ram
-// and bust, three missions from fixer Vera Solano plus cash pickups, a full HUD with minimap,
-// synthesized WebAudio and a localStorage save. Put your 3 or 4 JPEG screenshots in
-// screenshots/ (the first by name is the cover) and run it.
+// and bust, four missions from fixer Vera Solano plus 18 cash pickups, a marina with moored
+// boats, a full HUD with minimap, synthesized WebAudio and a localStorage save. Put your 3 or 4
+// JPEG screenshots in screenshots/ (the first by name is the cover) and run it.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:

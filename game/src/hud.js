@@ -13,6 +13,7 @@ export function createHud(doc, city) {
   const healthText = el('health-text');
   const cashText = el('cash');
   const starsText = el('stars');
+  const wantedLabel = el('wanted-label');
   const speedText = el('speed');
   const objectiveText = el('objective');
   const timerText = el('timer');
@@ -125,6 +126,9 @@ export function createHud(doc, city) {
     for (let i = 0; i < 5; i += 1) stars += i < state.wanted ? STAR_ON : STAR_OFF;
     starsText.textContent = stars;
     starsText.classList.toggle('hot', state.wanted > 0);
+    // The label names the heat: with no stars it reads as an empty wanted meter.
+    wantedLabel.textContent = state.wanted > 0 ? `WANTED · ${state.wanted} star${state.wanted === 1 ? '' : 's'}` : 'WANTED';
+    wantedLabel.classList.toggle('hot', state.wanted > 0);
     let speed = 0;
     if (!p.onFoot && p.carId >= 0 && state.cars[p.carId]) speed = Math.abs(state.cars[p.carId].speed) * 3.6;
     else speed = Math.sqrt(p.vx * p.vx + p.vz * p.vz) * 3.6;
@@ -145,9 +149,9 @@ export function createHud(doc, city) {
       endText.textContent = text;
       showScreen('end');
     },
-    setTitleBest(bestCash, missionsDone) {
+    setTitleBest(bestCash, missionsDone, missionsTotal) {
       titleBest.textContent = bestCash > 0
-        ? `Best cash $${bestCash.toLocaleString('en-US')} · ${missionsDone} of 3 jobs done`
+        ? `Best cash $${bestCash.toLocaleString('en-US')} · ${missionsDone} of ${missionsTotal} jobs done`
         : 'New to Palmera Bay — make your first dollar.';
     },
   };
