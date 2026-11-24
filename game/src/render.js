@@ -139,13 +139,19 @@ function makePersonMesh(shirtColor) {
 }
 
 export function createRenderer(canvas, city) {
-  let gl = null;
+  // Probe WebGL on a throwaway canvas. Calling getContext on the real canvas
+  // first would lock it to default attributes (preserveDrawingBuffer: false),
+  // and THREE would then inherit that context — making the frame unreadable
+  // after compositing. Let THREE create the real canvas's context instead,
+  // with preserveDrawingBuffer: true, so a shot can be read back.
+  let probe = null;
   try {
-    gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    const test = document.createElement('canvas');
+    probe = test.getContext('webgl2') || test.getContext('webgl');
   } catch {
-    gl = null;
+    probe = null;
   }
-  if (!gl) {
+  if (!probe) {
     return {
       hasWebGL: false,
       render() {},
