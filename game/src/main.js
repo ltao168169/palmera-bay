@@ -9,7 +9,7 @@ import { buildCity } from './city.js';
 import { createRandom } from './random.js';
 import { createWorld, EVENT_BUSTED, EVENT_COIN, EVENT_CRIME, EVENT_ENTER, EVENT_EXIT, EVENT_HIT, EVENT_MISSION_DONE, EVENT_MISSION_FAIL, EVENT_MISSION_STEP, EVENT_PUNCH, EVENT_WASTED, EVENT_WRECK } from './world.js';
 import { ACTION_CONFIRM, ACTION_ENTER, ACTION_JUMP, ACTION_PAUSE, ACTION_PUNCH, createInput } from './input.js';
-import { createRenderer } from './render.js';
+import { createRenderer } from './render.js?v=5';
 import { createAudio } from './audio.js';
 import { createHud } from './hud.js';
 import { stageShot } from './shots.js';
