@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palmera Bay — an open-world crime game</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #11141b; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .hidden { display: none !important; }
+  #hud { position: fixed; inset: 0; pointer-events: none; color: #eef1f5; }
+  .panel { background: rgba(16, 20, 28, 0.62); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 10px; backdrop-filter: blur(2px); }
+  #topleft { position: absolute; top: 14px; left: 14px; padding: 10px 14px; min-width: 240px; }
+  #healthbar { width: 220px; height: 12px; background: #2a3040; border-radius: 6px; overflow: hidden; margin: 6px 0 4px; }
+  #health-fill { height: 100%; width: 100%; background: #43d17a; }
+  #health-text { font-size: 13px; color: #c8cfdb; }
+  #cash { font-size: 26px; font-weight: 700; color: #7ddf9a; }
+  #stars { font-size: 24px; letter-spacing: 3px; color: #565c66; margin-top: 2px; }
+  #stars.hot { color: #ffd94a; text-shadow: 0 0 8px rgba(255, 217, 74, 0.7); }
+  #topright { position: absolute; top: 14px; right: 14px; text-align: right; }
+  #minimap { width: 190px; height: 190px; border-radius: 10px; border: 2px solid rgba(255, 255, 255, 0.25); background: #20242c; }
+  #speed { font-size: 22px; font-weight: 700; margin-top: 6px; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
+  #bottomleft { position: absolute; left: 14px; bottom: 14px; padding: 10px 14px; max-width: 460px; }
+  #objective { font-size: 16px; font-weight: 600; }
+  #timer { font-size: 15px; color: #ffd94a; margin-top: 2px; }
+  #timer.urgent { color: #ff6a5a; }
+  #prompt { font-size: 14px; color: #9fe8ff; margin-top: 4px; }
+  #toasts { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); text-align: center; }
+  .toast { background: rgba(16, 20, 28, 0.78); border: 1px solid rgba(255, 217, 74, 0.45); color: #ffe9a8; padding: 8px 16px; border-radius: 8px; margin-bottom: 6px; font-size: 15px; }
+  .screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8, 10, 16, 0.55); color: #eef1f5; }
+  .screen .card { max-width: 620px; padding: 34px 44px; text-align: center; background: rgba(16, 20, 28, 0.88); border: 1px solid rgba(255, 217, 74, 0.35); border-radius: 14px; }
+  .screen h1 { margin: 0 0 6px; font-size: 46px; letter-spacing: 4px; color: #ffd94a; }
+  .screen h2 { margin: 0 0 10px; font-size: 34px; letter-spacing: 2px; }
+  .screen p { color: #c8cfdb; line-height: 1.55; font-size: 15px; }
+  .screen .controls { text-align: left; display: inline-block; margin: 10px 0; font-size: 14px; color: #c8cfdb; line-height: 1.7; }
+  .screen .go { color: #ffd94a; font-weight: 700; margin-top: 12px; }
+  #title-best { color: #7ddf9a; font-size: 14px; }
+  #selftest { position: fixed; left: 0; top: 0; z-index: 50; width: 100%; max-height: 100%; overflow: auto; background: #0c0f14; color: #b8f5c8; font: 13px/1.5 monospace; white-space: pre-wrap; padding: 16px; box-sizing: border-box; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+<canvas id="game" aria-label="Palmera Bay: an open-world crime game. Walk, steal cars, run jobs for Vera Solano, and stay ahead of the police."></canvas>
+<p id="status" role="status" aria-live="polite"></p>
+<div id="hud">
+  <div id="topleft" class="panel">
+    <div id="healthbar"><div id="health-fill"></div></div>
+    <div id="health-text">HP 100</div>
+    <div id="cash">$0</div>
+    <div id="stars">☆☆☆☆☆</div>
+  </div>
+  <div id="topright">
+    <canvas id="minimap" width="190" height="190"></canvas>
+    <div id="speed">0 km/h</div>
+  </div>
+  <div id="bottomleft" class="panel">
+    <div id="objective">Vera has work. Meet her at the plaza (yellow marker).</div>
+    <div id="timer"></div>
+    <div id="prompt"></div>
+  </div>
+  <div id="toasts"></div>
+</div>
+<div id="screen-title" class="screen">
+  <div class="card">
+    <h1>PALMERA BAY</h1>
+    <p>You are Danny Cole, fresh out and broke in Palmera Bay. Vera Solano has work for you — if you can stay ahead of the Palmera Bay PD. Steal cars, run jobs, grab the cash bags, and don’t get caught.</p>
+    <div class="controls">
+      <b>W A S D</b> — walk / drive &nbsp;·&nbsp; <b>Shift</b> — run<br>
+      <b>Space</b> — jump / handbrake &nbsp;·&nbsp; <b>E</b> — enter a car / take a job<br>
+      <b>F</b> — punch &nbsp;·&nbsp; <b>Mouse drag</b> — camera &nbsp;·&nbsp; <b>Wheel</b> — zoom<br>
+      <b>P</b> — pause
+    </div>
+    <p id="title-best"></p>
+    <p class="go">Press Enter or click to start</p>
+  </div>
+</div>
+<div id="screen-pause" class="screen hidden">
+  <div class="card">
+    <h2>PAUSED</h2>
+    <p>Palmera Bay waits for you.</p>
+    <p class="go">Press P to resume</p>
+  </div>
+</div>
+<div id="screen-end" class="screen hidden">
+  <div class="card">
+    <h2 id="end-title">BUSTED</h2>
+    <p id="end-text"></p>
+    <p class="go">Press Enter to get back out there</p>
+  </div>
+</div>
+<pre id="selftest" class="hidden"></pre>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
