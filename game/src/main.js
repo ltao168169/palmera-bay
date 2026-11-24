@@ -82,18 +82,53 @@ function runShot(name) {
     painted += 1;
     if (painted < 2) requestAnimationFrame(paint);
     else {
+      // Capture the frame synchronously right after this render, while the
+      // drawing buffer still holds it. Reading it later (e.g. on a button
+      // click seconds afterwards) returns a cleared/black buffer.
       window.__shotReady = true;
+      captureShotFrame(name);
       setupShotDownload(name);
     }
   }
   requestAnimationFrame(paint);
 }
 
+// Capture the current game frame to a 1280x720 JPEG under the 256 KiB cap, and
+// keep the data URL so the download button can save it later. Must run in the
+// same task as the render (see runShot): the WebGL buffer is only readable
+// until the browser composites the frame.
+const SHOT_FILES = { start: '1-start.jpg', drive: '2-drive.jpg', chase: '3-chase.jpg', mission: '4-mission.jpg' };
+let shotCapture = null;
+function captureShotFrame(name) {
+  const file = SHOT_FILES[name] || `${name}.jpg`;
+  const src = canvas;
+  const out = document.createElement('canvas');
+  out.width = 1280;
+  out.height = 720;
+  const ctx = out.getContext('2d');
+  // Cover-crop the frame to 16:9 without distortion.
+  const sRatio = src.width / src.height;
+  const tRatio = 1280 / 720;
+  let sw = src.width;
+  let sh = src.height;
+  let sx = 0;
+  let sy = 0;
+  if (sRatio > tRatio) { sw = src.height * tRatio; sx = (src.width - sw) / 2; }
+  else { sh = src.width / tRatio; sy = (src.height - sh) / 2; }
+  ctx.drawImage(src, sx, sy, sw, sh, 0, 0, 1280, 720);
+  for (const q of [0.85, 0.7, 0.55, 0.4, 0.3]) {
+    const url = out.toDataURL('image/jpeg', q);
+    const bytes = Math.round((url.length - 'data:image/jpeg;base64,'.length) * 0.75);
+    if (bytes <= 262144 || q === 0.3) { shotCapture = { url, bytes, q, file }; break; }
+  }
+  window.__shotCapture = shotCapture;
+}
+
 // When a staged scene (?shot=) is ready, offer a one-click download of the frame as a
 // 1280x720 JPEG under the 256 KiB cap, so the shot can be saved from a browser that
 // cannot otherwise export the WebGL canvas. The button is the user gesture the download
-// needs; the file name matches shots.json.
-const SHOT_FILES = { start: '1-start.jpg', drive: '2-drive.jpg', chase: '3-chase.jpg', mission: '4-mission.jpg' };
+// needs; the file name matches shots.json. The image data was captured synchronously
+// right after the render (captureShotFrame); the button only saves that stored data.
 function setupShotDownload(name) {
   const file = SHOT_FILES[name] || `${name}.jpg`;
   const btn = document.createElement('button');
@@ -101,34 +136,15 @@ function setupShotDownload(name) {
   btn.textContent = `Download ${file} (1280x720 JPEG)`;
   btn.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:9999;padding:10px 14px;font:14px sans-serif;background:#0f766e;color:#fff;border:0;border-radius:8px;cursor:pointer;';
   btn.addEventListener('click', () => {
-    const src = canvas;
-    const out = document.createElement('canvas');
-    out.width = 1280;
-    out.height = 720;
-    const ctx = out.getContext('2d');
-    // Cover-crop the frame to 16:9 without distortion.
-    const sRatio = src.width / src.height;
-    const tRatio = 1280 / 720;
-    let sw = src.width;
-    let sh = src.height;
-    let sx = 0;
-    let sy = 0;
-    if (sRatio > tRatio) { sw = src.height * tRatio; sx = (src.width - sw) / 2; }
-    else { sh = src.width / tRatio; sy = (src.height - sh) / 2; }
-    ctx.drawImage(src, sx, sy, sw, sh, 0, 0, 1280, 720);
-    let chosen = null;
-    for (const q of [0.85, 0.7, 0.55, 0.4, 0.3]) {
-      const url = out.toDataURL('image/jpeg', q);
-      const bytes = Math.round((url.length - 'data:image/jpeg;base64,'.length) * 0.75);
-      if (bytes <= 262144 || q === 0.3) { chosen = { url, bytes, q }; break; }
-    }
+    const cap = shotCapture || window.__shotCapture;
+    if (!cap) { btn.textContent = 'Capture not ready — reload the scene'; return; }
     const a = document.createElement('a');
-    a.href = chosen.url;
-    a.download = file;
+    a.href = cap.url;
+    a.download = cap.file;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    btn.textContent = `Saved ${file} (${chosen.bytes} bytes, q${chosen.q})`;
+    btn.textContent = `Saved ${cap.file} (${cap.bytes} bytes, q${cap.q})`;
   });
   document.body.appendChild(btn);
 }
