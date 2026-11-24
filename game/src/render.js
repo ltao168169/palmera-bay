@@ -154,7 +154,7 @@ export function createRenderer(canvas, city) {
     };
   }
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(PALETTE.fog, 220, 620);

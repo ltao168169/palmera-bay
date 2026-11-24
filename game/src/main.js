@@ -81,9 +81,56 @@ function runShot(name) {
     if (renderer.hasWebGL) renderer.render(world.state, 0, world.state.time);
     painted += 1;
     if (painted < 2) requestAnimationFrame(paint);
-    else window.__shotReady = true;
+    else {
+      window.__shotReady = true;
+      setupShotDownload(name);
+    }
   }
   requestAnimationFrame(paint);
+}
+
+// When a staged scene (?shot=) is ready, offer a one-click download of the frame as a
+// 1280x720 JPEG under the 256 KiB cap, so the shot can be saved from a browser that
+// cannot otherwise export the WebGL canvas. The button is the user gesture the download
+// needs; the file name matches shots.json.
+const SHOT_FILES = { start: '1-start.jpg', drive: '2-drive.jpg', chase: '3-chase.jpg', mission: '4-mission.jpg' };
+function setupShotDownload(name) {
+  const file = SHOT_FILES[name] || `${name}.jpg`;
+  const btn = document.createElement('button');
+  btn.id = 'shot-download';
+  btn.textContent = `Download ${file} (1280x720 JPEG)`;
+  btn.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:9999;padding:10px 14px;font:14px sans-serif;background:#0f766e;color:#fff;border:0;border-radius:8px;cursor:pointer;';
+  btn.addEventListener('click', () => {
+    const src = canvas;
+    const out = document.createElement('canvas');
+    out.width = 1280;
+    out.height = 720;
+    const ctx = out.getContext('2d');
+    // Cover-crop the frame to 16:9 without distortion.
+    const sRatio = src.width / src.height;
+    const tRatio = 1280 / 720;
+    let sw = src.width;
+    let sh = src.height;
+    let sx = 0;
+    let sy = 0;
+    if (sRatio > tRatio) { sw = src.height * tRatio; sx = (src.width - sw) / 2; }
+    else { sh = src.width / tRatio; sy = (src.height - sh) / 2; }
+    ctx.drawImage(src, sx, sy, sw, sh, 0, 0, 1280, 720);
+    let chosen = null;
+    for (const q of [0.85, 0.7, 0.55, 0.4, 0.3]) {
+      const url = out.toDataURL('image/jpeg', q);
+      const bytes = Math.round((url.length - 'data:image/jpeg;base64,'.length) * 0.75);
+      if (bytes <= 262144 || q === 0.3) { chosen = { url, bytes, q }; break; }
+    }
+    const a = document.createElement('a');
+    a.href = chosen.url;
+    a.download = file;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    btn.textContent = `Saved ${file} (${chosen.bytes} bytes, q${chosen.q})`;
+  });
+  document.body.appendChild(btn);
 }
 
 function runGame() {
